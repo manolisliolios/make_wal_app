@@ -2,7 +2,7 @@ import { Sandpack } from "@codesandbox/sandpack-react";
 import { htmlFile } from "./demo";
 import { Button } from "@radix-ui/themes";
 import { useWalrusClient } from "../hooks/useWalrusClient";
-import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { useState } from "react";
 
 import "../../sdk/walrus-wasm/web/walrus_wasm_bg.wasm?init";

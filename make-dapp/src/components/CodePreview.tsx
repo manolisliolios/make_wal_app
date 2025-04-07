@@ -5,7 +5,11 @@ import { useWalrusClient } from "../hooks/useWalrusClient";
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { useState } from "react";
 
-import "../../node_modules/@mysten/walrus/walrus_wasm_bg.wasm?init";
+import "../../sdk/walrus-wasm/web/walrus_wasm_bg.wasm?init";
+import init from "../../sdk/walrus-wasm/web/walrus_wasm";
+import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
+
+init();
 
 
 export function CodePreview() {
@@ -15,32 +19,24 @@ export function CodePreview() {
 
   const [blobId, setBlobId] = useState<string | null>(null);
 
+  const client = new SuiClient({
+    url: getFullnodeUrl("mainnet"),
+    network: "mainnet",
+  })
+
   const activeAccount = useCurrentAccount();
-  const walrusClient = useWalrusClient();
+  const walrusClient = useWalrusClient(client);
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
-  const client = useSuiClient();
 
   const upload = async () => {
     if (!walrusClient) return;
     if (!activeAccount) return;
 
-    let file, encoded;
+    const file = new TextEncoder().encode(htmlFile);
 
-    try {
-      file = new TextEncoder().encode(htmlFile);
-    }catch (error){
-      console.error("text ecnoded failed")
-      console.error(error);
-      return;
-    }
+    const encoded = await walrusClient.encodeBlob(file);
 
-    try {
-      encoded = await walrusClient.encodeBlob(file);
-    }catch (error){
-      console.error("encode blob failed")
-      console.error(error);
-      return;
-    }
+    console.log(encoded);
 
     // console.log(encoded);
     const registerBlobTransaction = await walrusClient.registerBlobTransaction({
@@ -51,6 +47,8 @@ export function CodePreview() {
 			epochs: 3,
 			owner: activeAccount.address,
 		});
+
+    registerBlobTransaction.setSender(activeAccount.address);
 
     const response = await signAndExecute({
       transaction: registerBlobTransaction,

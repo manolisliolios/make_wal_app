@@ -1,22 +1,20 @@
 import { useSuiClient } from "@mysten/dapp-kit";
 import { useMemo } from "react";
-import { WalrusClient} from "@mysten/walrus";
+import { WalrusClient} from "../../sdk/walrus/src/client";
+import { SuiClient } from "@mysten/sui/client";
 
-export function useWalrusClient() {
-
-    const suiClient = useSuiClient();
+export function useWalrusClient(client: SuiClient) {
 
     const walrusClient = useMemo(() => {
-        if (!suiClient) return null;
 
         return new WalrusClient({
-            suiClient,
+            suiClient: client,
             network: "mainnet",
             storageNodeClientOptions: {
                 timeout: 60_000,
             },
         });
-    }, [suiClient]);
+    }, [client]);
 
     return walrusClient;
 }

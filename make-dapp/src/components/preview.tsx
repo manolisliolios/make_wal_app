@@ -9,13 +9,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { useGenerationStore } from "@/hooks/generation-store";
 import { LoaderCircle, Monitor, Smartphone, Tablet } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
-
-interface CanvasMessage {
-  type: string;
-  code: string;
-}
 
 interface PreviewProps {
   className?: string;
@@ -65,21 +60,82 @@ export function Preview({
   const isGenerating = versions[currentVersion]?.status === "generating";
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const viewerPanelRef = useRef<ImperativePanelHandle>(null);
+  const [lastValidCode, setLastValidCode] = useState("");
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const sendMessageToCanvas = useCallback((message: CanvasMessage) => {
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(message, "*");
-    }
-  }, []);
+  const updateIframeContent = useCallback(
+    (code: string) => {
+      if (!iframeRef.current?.contentWindow) return;
+
+      const iframeDoc = iframeRef.current.contentDocument;
+      if (!iframeDoc) return;
+
+      try {
+        // Only update if the code is valid HTML
+        if (code.includes("<") && code.includes(">")) {
+          // Clear any pending updates
+          if (updateTimeoutRef.current) {
+            clearTimeout(updateTimeoutRef.current);
+          }
+
+          // Debounce the update to prevent too frequent re-renders
+          updateTimeoutRef.current = setTimeout(() => {
+            try {
+              // Extract and apply styles
+              const styleContent = code.includes("<style>")
+                ? code.split("<style>")[1].split("</style>")[0]
+                : "";
+
+              // Get the body content
+              const bodyContent = code.includes("<body>")
+                ? code.split("<body>")[1].split("</body>")[0]
+                : code;
+
+              // Only update if the content has changed
+              if (bodyContent !== lastValidCode) {
+                // Clear previous content
+                iframeDoc.open();
+                iframeDoc.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <style>
+                        ${styleContent}
+                      </style>
+                    </head>
+                    <body>
+                      ${bodyContent}
+                    </body>
+                  </html>
+                `);
+                iframeDoc.close();
+                setLastValidCode(bodyContent);
+              }
+            } catch (error) {
+              console.error("Error updating iframe content:", error);
+              // If there's an error, revert to last valid code
+              if (lastValidCode) {
+                updateIframeContent(lastValidCode);
+              }
+            }
+          }, 100); // Debounce for 100ms
+        }
+      } catch (error) {
+        console.error("Error processing code:", error);
+      }
+    },
+    [lastValidCode],
+  );
 
   useEffect(() => {
-    sendMessageToCanvas({
-      type: "CODE",
-      code: currentCode,
-    });
-  }, [sendMessageToCanvas, currentCode]);
+    updateIframeContent(currentCode);
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, [updateIframeContent, currentCode]);
 
-  // Update panel size when viewerSize changes
   useEffect(() => {
     if (viewerPanelRef.current) {
       viewerPanelRef.current.resize(Number.parseInt(viewerSize));
@@ -109,8 +165,8 @@ export function Preview({
             <iframe
               ref={iframeRef}
               title="block-preview"
-              src={"/canvas"}
               className="relative z-20 w-full h-full bg-background"
+              sandbox="allow-scripts allow-same-origin"
             />
             {isGenerating && (
               <div className="absolute inset-0 z-30 bg-background/50 backdrop-blur-[1px] flex items-center justify-center pointer-events-auto animate-pulse">

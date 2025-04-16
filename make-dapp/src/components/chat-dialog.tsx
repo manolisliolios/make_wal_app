@@ -10,7 +10,7 @@ import {
   ChatInputSubmit,
   ChatInputTextArea,
 } from "@/components/ui/chat-input";
-import { useCompletion } from "ai/react";
+import { useCompletion } from "@ai-sdk/react";
 import { useEffect } from "react";
 
 export function ChatDialog() {
@@ -34,9 +34,9 @@ export function ChatDialog() {
     stop,
     setInput,
   } = useCompletion({
-    api: "/api/ai/generate",
+    api: "http://localhost:3000/api/make",
     onFinish: (prompt, completion) => {
-      setView("preview");
+      setView("code");
       updateCurrentCode(completion);
       updateStatus("complete");
       setChatOpen(false);

@@ -1,6 +1,8 @@
 import { ConnectButton } from "@mysten/dapp-kit";
 import { Box, Container, Flex, Heading } from "@radix-ui/themes";
 import { CodePreview } from "./components/CodePreview";
+import "./index.css";
+import { Button } from "@/components/ui/button";
 
 function App() {
   return (
@@ -29,9 +31,8 @@ function App() {
           px="4"
           style={{ background: "var(--gray-a2)", minHeight: 500 }}
         >
-
           <CodePreview />
-          
+          <Button>Click me</Button>
         </Container>
       </Container>
     </>

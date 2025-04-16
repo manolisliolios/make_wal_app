@@ -5,10 +5,16 @@ import { CodeEditor } from "@/components/code-editor";
 import { CopyButton } from "@/components/copy-button";
 import { EditorToolbar } from "@/components/editor-toolbar";
 import { Preview, PreviewControls } from "@/components/preview";
+import { Versions } from "@/components/versions";
 import { useGenerationStore } from "@/hooks/generation-store";
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 
-export const EditorLayout = () => {
+interface EditorLayoutProps {
+  className?: string;
+}
+
+export const EditorLayout = ({ className }: EditorLayoutProps) => {
   const view = useGenerationStore((state) => state.view);
   const versions = useGenerationStore((state) => state.versions);
   const currentVersion = useGenerationStore((state) => state.currentVersion);
@@ -18,27 +24,37 @@ export const EditorLayout = () => {
   const toolbarActions = useMemo(() => {
     if (view === "preview") {
       return (
-        <PreviewControls
-          viewerSize={viewerSize}
-          onViewerSizeChange={setViewerSize}
-        />
+        <>
+          <Versions />
+          <PreviewControls
+            viewerSize={viewerSize}
+            onViewerSizeChange={setViewerSize}
+          />
+        </>
       );
     }
     if (view === "code") {
-      return <CopyButton value={currentCode} className="h-8" />;
+      return (
+        <>
+          <Versions />
+          <CopyButton value={currentCode} className="h-8" />
+        </>
+      );
     }
     return null;
   }, [view, viewerSize, currentCode]);
 
   return (
-    <div className="flex-1 relative py-3 pl-4 pr-1 flex flex-col gap-2 border-l border-border">
+    <div className={cn("h-full flex flex-col", className)}>
       <EditorToolbar actions={toolbarActions} />
-      <Preview
-        className={view === "preview" ? "block" : "hidden"}
-        viewerSize={viewerSize}
-        onViewerSizeChange={setViewerSize}
-      />
-      <CodeEditor className={view === "code" ? "block" : "hidden"} />
+      <div className="flex-1 overflow-hidden">
+        <Preview
+          className={view === "preview" ? "block h-full" : "hidden"}
+          viewerSize={viewerSize}
+          onViewerSizeChange={setViewerSize}
+        />
+        <CodeEditor className={view === "code" ? "block h-full" : "hidden"} />
+      </div>
       <ChatDialog />
     </div>
   );

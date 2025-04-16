@@ -36,7 +36,7 @@ export function ChatDialog() {
   } = useCompletion({
     api: "http://localhost:3000/api/make",
     onFinish: (prompt, completion) => {
-      setView("code");
+      setView("preview");
       updateCurrentCode(completion);
       updateStatus("complete");
       setChatOpen(false);

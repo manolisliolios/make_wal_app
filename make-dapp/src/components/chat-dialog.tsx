@@ -34,7 +34,7 @@ export function ChatDialog() {
     stop,
     setInput,
   } = useCompletion({
-    api: "http://localhost:3000/api/make",
+    api: "http://localhost:3000/api/make-oai",
     onFinish: (prompt, completion) => {
       setView("preview");
       updateCurrentCode(completion);
